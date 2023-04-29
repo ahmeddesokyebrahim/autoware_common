@@ -508,6 +508,19 @@ void overwriteLaneletsCenterline(
   }
 }
 
+void addBidirectionalLanelets(lanelet::LaneletMapPtr lanelet_map)
+{
+  for (auto lanelet_obj : lanelet_map->laneletLayer) {
+    const std::string one_way = lanelet_obj.attributeOr("one_way", "yes");
+    if (one_way == "no") {
+      lanelet::Lanelet inverted_lanelet;
+      inverted_lanelet = lanelet_obj.invert();
+      inverted_lanelet.setId(110000+lanelet_obj.id());
+      lanelet_map->add(inverted_lanelet);
+    }
+  }
+}
+
 lanelet::ConstLanelets getConflictingLanelets(
   const lanelet::routing::RoutingGraphConstPtr & graph, const lanelet::ConstLanelet & lanelet)
 {
