@@ -512,11 +512,31 @@ void addBidirectionalLanelets(lanelet::LaneletMapPtr lanelet_map)
 {
   for (auto lanelet_obj : lanelet_map->laneletLayer) {
     const std::string one_way = lanelet_obj.attributeOr("one_way", "yes");
-    if (one_way == "no") {
-      lanelet::Lanelet inverted_lanelet;
-      inverted_lanelet = lanelet_obj.invert();
-      inverted_lanelet.setId(110000+lanelet_obj.id());
-      lanelet_map->add(inverted_lanelet);
+    const std::string added_in_runtime = lanelet_obj.attributeOr("added_in_runtim", "no");
+    if ((one_way == "no") && (added_in_runtime == "no")) {
+      lanelet_obj.setAttribute("one_way", "yes");
+      lanelet::Lanelet new_lanelet;
+
+      lanelet::Lanelet inverted_lanelet = lanelet_obj.invert();
+
+      if(inverted_lanelet.regulatoryElements().size() > 0){
+        new_lanelet = lanelet::Lanelet(utils::getId(), inverted_lanelet.leftBound(), inverted_lanelet.rightBound(),
+      inverted_lanelet.attributes(), inverted_lanelet.regulatoryElements());
+      }
+      else{
+        new_lanelet = lanelet::Lanelet(utils::getId(), inverted_lanelet.leftBound(), inverted_lanelet.rightBound(),
+      inverted_lanelet.attributes());
+
+      }
+      // inverted_lanelet.setId(utils::getId());
+      
+
+      std::cout << "\n\n\nOriginal Lanelet ID = " << lanelet_obj.id() << std::endl;
+      std::cout << "\n\n\nAdding a new lanelet with ID = " << new_lanelet.id() << "\n\n\n\n\n" << std::endl;
+
+      new_lanelet.setAttribute("added_in_runtim", "yes");
+      
+      lanelet_map->add(new_lanelet);
     }
   }
 }
