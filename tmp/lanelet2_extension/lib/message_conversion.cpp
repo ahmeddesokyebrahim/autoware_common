@@ -19,6 +19,7 @@
 #include "lanelet2_extension/utility/message_conversion.hpp"
 
 #include "lanelet2_extension/projection/mgrs_projector.hpp"
+#include "lanelet2_extension/routing_cost/routing_cost_no_drivable_lane.hpp"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -81,10 +82,31 @@ void fromBinMsg(
   lanelet::traffic_rules::TrafficRulesPtr * traffic_rules,
   lanelet::routing::RoutingGraphPtr * routing_graph)
 {
+  bool no_drivable_lane{false};
+
   fromBinMsg(msg, map);
+
   *traffic_rules = lanelet::traffic_rules::TrafficRulesFactory::create(
     lanelet::Locations::Germany, lanelet::Participants::Vehicle);
-  *routing_graph = lanelet::routing::RoutingGraph::build(*map, **traffic_rules);
+
+  for (const auto & ll : map->laneletLayer) {
+    const std::string no_drivable_lane_attr = ll.attributeOr("no_drivable_lane", "no");
+    if (no_drivable_lane_attr == "yes") {
+      no_drivable_lane = true;
+      break;
+    }
+  }
+
+  if (no_drivable_lane) {
+    lanelet::routing::RoutingCostPtrs no_drivable_lane_routing_cost = {
+      std::make_shared<lanelet::routing::RoutingCostNoDrivableLane>(10.)};
+
+    *routing_graph =
+      lanelet::routing::RoutingGraph::build(*map, **traffic_rules, no_drivable_lane_routing_cost);
+
+  } else {
+    *routing_graph = lanelet::routing::RoutingGraph::build(*map, **traffic_rules);
+  }
 }
 
 void toGeomMsgPt(const geometry_msgs::msg::Point32 & src, geometry_msgs::msg::Point * dst)

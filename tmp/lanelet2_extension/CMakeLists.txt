@@ -45,6 +45,7 @@ ament_auto_add_library(lanelet2_extension_lib SHARED
   lib/virtual_traffic_light.cpp
   lib/visualization.cpp
   lib/route_checker.cpp
+  lib/routing_cost_no_drivable_lane.cpp
 )
 target_link_libraries(lanelet2_extension_lib
   ${GeographicLib_LIBRARIES}
